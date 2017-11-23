@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "data": {
+      ".read": "auth.uid === 'node-app-admin'",
+      ".write": "auth.uid === 'node-app-admin'"
+    }
+  }
+}

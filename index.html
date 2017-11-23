@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+<title>Kijiji Montreal Map</title>
+
+<head>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        #map {
+            left: 0;
+            height: 100vh;
+            width: 100vw;
+            transition: 0.5s ease-in-out all;
+        }
+
+        #sidebar-container {
+            z-index: 1;
+            height: 100vh;
+            max-width: 25vw;
+            min-width: 25vw;
+            position: fixed;
+            left: -30vw;
+            background-color: white;
+            transition: 0.5s ease-in-out left;
+            overflow-y: scroll;
+        }
+
+        #sidebar {
+            max-width: 400px;
+            font-size: 0.8em;
+        }
+
+        .content-side {
+            padding: 20px;
+        }
+
+        .content-side:hover {
+            background-color: #ffffcc;
+        }
+    </style>
+    <script src="./ads.js"></script>
+
+</head>
+
+<body>
+    <div id="sidebar-container">
+        <div id="sidebar"></div>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-database.js"></script>
+
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyB_QdnfKB8GuVyVEsksKCot66bMD8hWNlQ",
+            authDomain: "montreal-kijiji.firebaseapp.com",
+            databaseURL: "https://montreal-kijiji.firebaseio.com",
+            projectId: "montreal-kijiji",
+            storageBucket: "",
+            messagingSenderId: "38299452300"
+        };
+        firebase.initializeApp(config);
+        var database = firebase.database();
+    </script>
+    <script>
+        let nodesSidebar;
+        let objToDebug;
+
+        function initMap() {
+            let markers = []
+            let contentString;
+            let montrealPos = {
+                lat: 45.5017,
+                lng: -73.5673
+            }
+            var styledMapType = new google.maps.StyledMapType(
+
+                [{
+                        "elementType": "geometry",
+                        "stylers": [{
+                            "color": "#f5f5f5"
+                        }]
+                    },
+                    {
+                        "elementType": "labels.icon",
+                        "stylers": [{
+                            "saturation": -100
+                        }]
+                    },
+                    {
+                        "elementType": "labels.text.fill",
+                        "stylers": [{
+                            "color": "#616161"
+                        }]
+                    },
+                    {
+                        "elementType": "labels.text.stroke",
+                        "stylers": [{
+                            "color": "#f5f5f5"
+                        }]
+                    },
+                    {
+                        "featureType": "administrative.land_parcel",
+                        "elementType": "labels.text.fill",
+                        "stylers": [{
+                            "visibility": "off"
+                        }]
+                    },
+                    {
+                        "featureType": "poi",
+                        "stylers": [{
+                            "visibility": "off"
+                        }]
+                    },
+                    {
+                        "featureType": "road",
+                        "elementType": "geometry",
+                        "stylers": [{
+                            "color": "#ffffff"
+                        }]
+                    },
+                    {
+                        "featureType": "road.arterial",
+                        "elementType": "labels.text.fill",
+                        "stylers": [{
+                            "color": "#757575"
+                        }]
+                    },
+                    {
+                        "featureType": "road.highway",
+                        "elementType": "geometry",
+                        "stylers": [{
+                            "color": "#dadada"
+                        }]
+                    },
+                    {
+                        "featureType": "road.highway",
+                        "elementType": "labels.text.fill",
+                        "stylers": [{
+                            "color": "#616161"
+                        }]
+                    },
+                    {
+                        "featureType": "road.local",
+                        "elementType": "labels.text.fill",
+                        "stylers": [{
+                            "color": "#9e9e9e"
+                        }]
+                    },
+                    {
+                        "featureType": "transit.line",
+                        "elementType": "geometry",
+                        "stylers": [{
+                            "color": "#e5e5e5"
+                        }]
+                    },
+                    {
+                        "featureType": "transit.station",
+                        "elementType": "all",
+                    },
+                    {
+                        "featureType": "water",
+                        "elementType": "geometry",
+                        "stylers": [{
+                            "color": "#c9c9c9"
+                        }]
+                    },
+                    {
+                        "featureType": "water",
+                        "elementType": "labels.text.fill",
+                        "stylers": [{
+                            "color": "#9e9e9e"
+                        }]
+                    }
+                ], {
+                    name: 'Styled Map'
+                });
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 13,
+                center: montrealPos,
+                mapTypeControlOptions: {
+                    mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain',
+                        'styled_map'
+                    ]
+                }
+            });
+            map.mapTypes.set('styled_map', styledMapType);
+            map.setMapTypeId('styled_map');
+
+            database.ref("apt").once('value').then(function (snapshot) {
+                let data = [];
+                let dataObj = snapshot.val();
+                for (ad in dataObj) {
+                    data.push(dataObj[ad]);
+                }
+                console.log(ad);
+                data.reduce((prev, ad) => {
+                    let date = new Date(ad.datePosted)
+                    let image;
+                    let templateString =
+                        ` <div class="content-side" idAd="${ad.id}">
+                            <h3>${ad.title}</h3>
+                            <h4>${ad.mapAddress}</h3>
+                            <p>Date posted:  ${new Date().getDate() !== date.getDate() ? date.toDateString() : "Today,"} ${date.toLocaleTimeString()}</p>
+                            <h3>${ad.price > 0 ? ad.price/100 : "Sur Demande"}$ </h3>
+                            <a href="${ad.link}" target="_blank">View to Kijiji</a><br/>
+                            <a href="https://www.google.ca/maps/place/${ad.mapAddress.replace(/ /g, "+")}" target="_blank">View on Google Maps</a>
+                            <br/>
+                            <img style="width:200px;max-height:250px"src=${ad.thumbnail}></img>
+                        </div>
+                    `;
+                    if (!ad.title) {
+                        return false;
+                    }
+                    image = {
+                        size: new google.maps.Size(24, 40),
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(12, 40),
+                        scaledSize: new google.maps.Size(24, 40)
+                    }
+
+                    if (ad.longitude === prev.longitude && ad.latitude === prev.latitude) {
+                        contentString += '<br/>***********************************<br/>'
+                        contentString += templateString;
+                        markers[markers.length - 1].infoWindow.setContent(contentString);
+
+
+                    } else {
+                        if (isNaN(ad.mapAddress[0])) {
+                            image.url = './markers/area.png'
+                        } else {
+                            image.url = './markers/marker.png'
+                        }
+
+                        if (ad.longitude > -73.5202339 || ad.longitude < -73.6772573 || ad.latitude <
+                            45.3964454 ||
+                            ad.latitude >
+                            45.5564337) {
+                            return false;
+                        }
+                        contentString = templateString
+
+
+                        markers.push(new google.maps.Marker({
+                            position: {
+                                lat: ad.latitude,
+                                lng: ad.longitude
+                            },
+                            mapAddress: ad.mapAddress,
+                            id: ad.id,
+                            map: map,
+                            icon: image,
+                            infoWindow: new google.maps.InfoWindow({
+                                content: contentString,
+                                maxWidth: 400
+                            })
+                        }));
+                    }
+
+                    return ad
+                })
+                map.addListener("click", () => {
+                    markers.forEach(mark => mark.infoWindow.close());
+                })
+                markers.forEach((marker) => {
+                    marker.addListener("click", () => {
+                        markers.forEach(mark => mark.infoWindow.close());
+                        marker.infoWindow.open(map, marker);
+                    })
+                });
+
+                map.addListener("dragend", fillSidebar);
+                map.addListener("zoom_changed", () => {
+                    if (map.getZoom() > 15) {
+                        fillSidebar();
+                        document.getElementById('sidebar-container').style.left = "0vw";
+                        document.getElementById('map').style.width = "75vw";
+                        document.getElementById('map').style.left = "25vw";
+
+
+                    } else {
+                        document.getElementById('sidebar-container').style.left = "-25vw";
+                        document.getElementById('map').style.width = "100vw";
+                        document.getElementById('map').style.left = "0";
+                    }
+                })
+
+
+                function fillSidebar() {
+                    let currentMarker;
+                    let sidebar = document.getElementById('sidebar')
+                    sidebar.innerHTML = "";
+                    if (map.getZoom() > 15) {
+                        let bounds = map.getBounds()
+                        let latOffset = (bounds.f.f - bounds.f.b) * 0;
+                        let lngOffset = (bounds.b.f - bounds.b.b) * 0.30;
+                        let latMax = bounds.f.f;
+                        let lngMax = bounds.b.f - lngOffset;
+                        let latMin = bounds.f.b;
+                        let lngMin = bounds.b.b;
+                        markers.forEach(marker => {
+                            if (marker.getPosition().lng() > lngMin &&
+                                marker.getPosition().lng() < lngMax &&
+                                marker.getPosition().lat() > latMin &&
+                                marker.getPosition().lat() < latMax) {
+                                sidebar.innerHTML += marker.infoWindow.content +
+                                    "<br/>***********************************<br/>";
+                            }
+                        })
+                    }
+
+                    nodesSidebar = document.getElementsByClassName("content-side");
+
+                    for (let i = 0; i < nodesSidebar.length; i++) {
+                        nodesSidebar[i].addEventListener("mouseenter", function () {
+                            markers.forEach(marker => {
+                                if (marker.id === parseFloat(this.getAttribute('idAd'))) {
+                                    marker.setIcon({
+                                        size: new google.maps.Size(32, 50),
+                                        origin: new google.maps.Point(0, -5),
+                                        anchor: new google.maps.Point(16, 50),
+                                        scaledSize: new google.maps.Size(32, 50),
+                                        url: './markers/highlight.png',
+                                        zIndex: -1000
+                                    })
+                                }
+                            })
+                        }.bind(nodesSidebar[i]));
+                        nodesSidebar[i].addEventListener("mouseleave", function () {
+                            markers.forEach(marker => {
+                                if (marker.id === parseFloat(this.getAttribute('idAd'))) {
+                                    if (isNaN(marker.mapAddress[0])) {
+                                        marker.setIcon({
+                                            size: new google.maps.Size(24, 40),
+                                            origin: new google.maps.Point(0, 0),
+                                            anchor: new google.maps.Point(12, 40),
+                                            scaledSize: new google.maps.Size(24, 40),
+                                            url: './markers/area.png',
+                                            zIndex: 10
+                                        })
+                                    } else {
+                                        marker.setIcon({
+                                            size: new google.maps.Size(24, 40),
+                                            origin: new google.maps.Point(0, 0),
+                                            anchor: new google.maps.Point(12, 40),
+                                            scaledSize: new google.maps.Size(24, 40),
+                                            url: './markers/marker.png',
+                                            zIndex: 10
+                                        })
+                                    }
+
+                                }
+                            })
+                        }.bind(nodesSidebar[i]));
+                    }
+                }
+            });
+        }
+    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBeTb_0GJ90j0qPe934e2BFE0DyBTFkxOc&callback=initMap"></script>
+</body>
+
+</html>
