@@ -1,3 +1,8 @@
+// Mathieu Blanchette
+// http://mathieublanchette.com
+
+
+//Price range for query
 const MIN_PRICE = 600;
 const MAX_PRICE = 1200;
 
@@ -5,9 +10,28 @@ const admin = require("firebase-admin");
 const cheerio = require("cheerio");
 const http = require('follow-redirects').http;
 
+//DATABASE
+
+const serviceAccount = require(__dirname + "/keys/montreal-kijiji-firebase-adminsdk-uhkus-ae4f62bd72.json");
+
+
+//credentials for the Firebase db
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://montreal-kijiji.firebaseio.com",
+    databaseAuthVariableOverride: {
+        uid: "node-app-admin"
+    }
+});
+
+const db = admin.database();
+const ref = db.ref("apt");
+
 let delay;
 
 
+
+//Go get a kijiji webpage 
 function getPage(i) {
     const options = {
         host: 'www.kijiji.ca',
@@ -15,15 +39,16 @@ function getPage(i) {
         path: '/b-appartement-condo/ville-de-montreal/page-',
         path2: `/c37l1700281?ad=offering&price=${MIN_PRICE}__${MAX_PRICE}`
     }
-
-
-    // return new pending promise
+    //check if the argument is a number(page with 25 ads) or an actual url(every specific ad)
     if (typeof i === "number") {
         options.path = options.path + i.toString() + options.path2;
     } else {
         options.path = i;
     }
+
+    // return new pending promise
     return new Promise((resolve, reject) => {
+        //sets a timeout otherwise too many requests at once
         setTimeout(() => {
             const request = http.get(options, (response) => {
                 console.log(options.path);
@@ -34,11 +59,11 @@ function getPage(i) {
                 response.on("error", (err) => reject(err))
                 // temporary data holder
                 let body = "";
-                // on every content chunk, push it to the data array
+                // on every content chunk add it to the body string
                 response.on('data', (chunk) => {
                     body += chunk;
                 });
-                // we are done, resolve promise with those joined chunk
+                // we are done, resolve promise with html body
                 response.on('end', () => {
                     resolve(body)
                 });
@@ -50,7 +75,7 @@ function getPage(i) {
     })
 };
 
-
+//get the url for each ad on a 25 ad page
 function getLinkAds(body) {
     const links = [];
     const $ = cheerio.load(body);
@@ -66,6 +91,8 @@ function getLinkAds(body) {
 }
 
 
+//get the data from each ad html body
+//use reduce so that if the data is not valide, it just goes to the next ad and not crash
 function getDataFromAd(prev, body) {
     let $ = cheerio.load(body);
     let script = $("div[id=FesLoader]").children().html();
@@ -91,6 +118,88 @@ function getDataFromAd(prev, body) {
     }
 }
 
+
+
+//*************************************************************************************** */
+//DATABASE FUNCTIONS
+
+
+//Sends the data collected to the database
+function writeToDB(dataAds, pageNum, endDate) {
+
+    //gets the most recent ad added to the, 
+    //so that the main function can be called until it reaches that date is reached
+    if (!endDate) {
+        ref.orderByChild("datePosted").limitToLast(1).once("value").then(snap => {
+            snap.forEach(function (child) {
+                endDate = child.val()["datePosted"];
+                console.log(endDate);
+            })
+        })
+    }
+
+    checkForDoubles(dataAds)
+        .then(ads => {
+            //Adds every new ads to the Database
+            Promise.all(ads.map(ad => {
+                return new Promise((resolve, reject) => {
+                    ref.push(ad, () => {
+                        resolve(ad)
+                    });
+                })
+            })).then(ad => {
+
+                //if the date of the most recent ad hasn't been reached yet,
+                //it restarts the whole process with the next webpage  
+
+                pageNum++;
+                console.log(new Date(endDate) + " < " + new Date(ads[ads.length - 1].datePosted))
+                if (endDate < ads[ads.length - 1].datePosted) {
+                    main(pageNum, endDate);
+                }
+
+                //Prints out the number of ads in the database
+                ref.once("value", function (snap) {
+                    console.log(snap.numChildren());
+                })
+            })
+        })
+
+}
+
+//Checks that there are no new listings already in the database 
+function checkForDoubles(ads) {
+    return Promise.all(ads.map(ad => {
+        return new Promise((resolve, reject) => {
+            ref.orderByChild("id").equalTo(ad.id).once("value", function (snap) {
+                if (snap.exists()) {
+                    snap.forEach(function (child) {
+                        ref.child(child.key).remove(() => resolve(ad));
+                    })
+                } else {
+                    resolve(ad);
+                }
+            })
+        })
+    }))
+}
+//removes ads that are 3 days old
+function removeThreeDaysOld() {
+    let currentTime = new Date().getTime();
+    ref.orderByChild("datePosted").endAt(currentTime - 259200000).on("value", function (snap) {
+        snap.forEach(function (child) {
+            if (!child.val()["saved"]) {
+                ref.child(child.key).remove();
+            }
+        })
+    })
+}
+
+//*************************************************************************************** */
+
+
+//First function to be called.
+//Asks for the main page, then asks for each ad page, then calls the function that write to the database
 function main(pageNum, endDate) {
     delay = 0;
     console.log(new Date(endDate));
@@ -106,86 +215,11 @@ function main(pageNum, endDate) {
 }
 
 
-//DATABASE
 
-const serviceAccount = require(__dirname + "/keys/montreal-kijiji-firebase-adminsdk-uhkus-ae4f62bd72.json");
-
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://montreal-kijiji.firebaseio.com",
-    databaseAuthVariableOverride: {
-        uid: "node-app-admin"
-    }
-});
-
-const db = admin.database();
-const ref = db.ref("apt");
+main(1, 0);
 
 
+//Calls the main function every 10 minutes
+// setInterval(() => main(1, 0), 600000);
 
-function writeToDB(dataAds, pageNum, endDate) {
-    if (!endDate) {
-        ref.orderByChild("datePosted").limitToLast(1).once("value").then(snap => {
-            snap.forEach(function (child) {
-                endDate = child.val()["datePosted"];
-                console.log(endDate);
-            })
-        })
-    }
-
-    checkForDoubles(dataAds)
-        .then(ads => {
-            Promise.all(ads.map(ad => {
-                return new Promise((resolve, reject) => {
-                    ref.push(ad, () => {
-                        resolve(ad)
-                    });
-                })
-            })).then(ad => {
-
-                pageNum++;
-
-                console.log(new Date(endDate) + " < " + new Date(ads[ads.length - 1].datePosted))
-
-                if (endDate < ads[ads.length - 1].datePosted) {
-                    main(pageNum, endDate);
-                }
-
-
-                ref.once("value", function (snap) {
-                    console.log(snap.numChildren());
-                })
-            })
-        })
-
-}
-
-
-function checkForDoubles(ads) {
-    return Promise.all(ads.map(ad => {
-        return new Promise((resolve, reject) => {
-            ref.orderByChild("datePosted").equalTo(ad.datePosted).once("value", function (snap) {
-                if (snap.exists()) {
-                    snap.forEach(function (child) {
-                        ref.child(child.key).remove(() => resolve(ad));
-                    })
-                } else {
-                    resolve(ad);
-                }
-            })
-        })
-    }))
-}
-
-function removeWeekOld() {
-    let currentTime = new Date().getTime();
-    ref.orderByChild("datePosted").endAt(currentTime - 259200000).on("value", function (snap) {
-        snap.forEach(function (child) {
-            ref.child(child.key).remove();
-        })
-    })
-}
-
-
-setInterval(() => main(1, 0), 600000);
-removeWeekOld();
+removeThreeDaysOld();
