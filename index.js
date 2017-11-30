@@ -92,7 +92,7 @@ function getLinkAds(body) {
 
 
 //get the data from each ad html body
-//use reduce so that if the data is not valide, it just goes to the next ad and not crash
+//use reduce so that if the data is not valid, it just goes to the next ad and not crash
 function getDataFromAd(prev, body) {
     let $ = cheerio.load(body);
     let script = $("div[id=FesLoader]").children().html();
@@ -188,9 +188,7 @@ function removeThreeDaysOld() {
     let currentTime = new Date().getTime();
     ref.orderByChild("datePosted").endAt(currentTime - 259200000).on("value", function (snap) {
         snap.forEach(function (child) {
-            if (!child.val()["saved"]) {
-                ref.child(child.key).remove();
-            }
+            ref.child(child.key).remove();
         })
     })
 }
