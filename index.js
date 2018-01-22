@@ -13,15 +13,14 @@ const http = require('follow-redirects').http;
 //DATABASE
 
 const serviceAccount = require(__dirname + "/keys/montreal-kijiji-firebase-adminsdk-uhkus-ae4f62bd72.json");
+const uidOverride = require(__dirname + "/keys/uidOverride.json");
 
 
 //credentials for the Firebase db
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: "https://montreal-kijiji.firebaseio.com",
-    databaseAuthVariableOverride: {
-        uid: "node-app-admin"
-    }
+    databaseAuthVariableOverride: uidOverride
 });
 
 const db = admin.database();
