@@ -9,72 +9,17 @@
 <title>Kijiji Montreal Map</title>
 
 <head>
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Open Sans', sans-serif;
-        }
-
-        #map {
-            left: 0;
-            height: 100vh;
-            width: 100vw;
-            transition: 0.5s ease-in-out all;
-        }
-
-        #sidebar-container {
-            z-index: 1;
-            height: 100vh;
-            max-width: 25vw;
-            min-width: 25vw;
-            position: fixed;
-            left: -30vw;
-            background-color: white;
-            transition: 0.5s ease-in-out left;
-            overflow-y: scroll;
-        }
-
-        #sidebar {
-            max-width: 400px;
-            font-size: 0.8em;
-        }
-
-        .content-side {
-            padding: 20px;
-        }
-
-        .content-side:hover {
-            background-color: #ffffcc;
-        }
-
-        #userArea {
-            z-index: 1000;
-            top: 0;
-            right: 0;
-            position: absolute;
-            background-color: white;
-        }
-
-        #overlay {
-            width: 100vw;
-            height: 100vh;
-            opacity: 0.8;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 10000;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            flex-direction: column;
-            align-items: center;
-        }
-    </style>
-
+    <link rel="stylesheet" type="text/css" href="./css/styles.css">
 </head>
 
 <body>
     <div id="sidebar-container">
+        <div id="closeSidebar" onclick="closeSaved()">
+            <svg height="25" width="25">
+                <line x1="0" y1="0" x2="25" y2="25" style="stroke-width:3" />
+                <line x1="0" y1="25" x2="25" y2="0" style="stroke-width:3" />
+            </svg>
+        </div>
         <div id="sidebar"></div>
     </div>
     <div id="overlay">
@@ -82,10 +27,33 @@
         <h2>Please wait...</h2>
     </div>
     <div id="userArea">
-        <p id="name"></p>
-        <a style="font-size:0.8em;" href="javascript:viewSaved()">Saved listings</a>
-        <br/>
-        <button id="sign" onclick="signIn()">Sign in</button>
+        <ul>
+            <li>
+                <span id="name"></span>
+            </li>
+            <li>
+                <a id="sign" href="javascript:signIn()">Sign in</a>
+            </li>
+            <li>
+                <a id="viewSaved" href="javascript:viewSaved()">Saved listings</a>
+            </li>
+            <li>
+                <a id="viewColorLegend" href="javascript:viewColorLegend()">Color Legend</a>
+            </li>
+        </ul>
+    </div>
+    <div id="colorLegend" style="display:none">
+        <div id="closeColorLegend" onclick="closeColorLegend()">
+            <svg height="15" width="15">
+                <line x1="0" y1="0" x2="15" y2="15" style="stroke-width:2" />
+                <line x1="0" y1="15" x2="15" y2="0" style="stroke-width:2" />
+            </svg>
+        </div>
+        <ul>
+            <li style="background-color:red; padding:5px; border-radius:5px;color:white;">Exact Address</li>
+            <li style="background-color:#0079ea; padding:5px; border-radius:5px;color:white;">Approximate Address</li>
+            <li style="background-color:#735c96; padding:5px; border-radius:5px;color:white;">Already Visited</li>
+        </ul>
     </div>
     <div id="map"></div>
 
@@ -114,7 +82,8 @@
         firebase.auth().onAuthStateChanged(function (user) {
             let signButton = document.getElementById("sign");
             if (user) {
-                signButton.setAttribute("onclick", "signOut()");
+                document.getElementById("viewSaved").style.display = "inline";
+                signButton.setAttribute("href", "javascript:signOut()");
                 signButton.textContent = "Sign Out";
                 document.getElementById("name").innerHTML = `Hi ${user.displayName.match(/(\S+)/)[0]}`;
                 currentUser = user;
@@ -128,8 +97,9 @@
                         markVisited(markers, visited);
                     })
             } else {
-                signButton.setAttribute("onclick", "signIn()");
-                signButton.textContent = "Sign In with Google";
+                document.getElementById("viewSaved").style.display = "none";
+                signButton.setAttribute("href", "javascript:signIn()");
+                signButton.textContent = "Sign in with Google";
                 document.getElementById("name").innerHTML = `Not signed in`;
                 currentUser = null;
             }
@@ -138,7 +108,9 @@
 
         function signOut() {
             firebase.auth().signOut().then(function () {
+                document.getElementById("viewSaved").style.display = "none";
                 document.getElementById("name").innerHTML = `Not signed in`;
+                initMap();
             }).catch(function (error) {
                 // An error happened.
             });
@@ -150,6 +122,7 @@
                 var token = result.credential.accessToken;
                 // The signed-in user info.
                 var user = result.user;
+                document.getElementById("viewSaved").style.display = "inline";
                 document.getElementById("name").innerHTML =
                     `Hi ${user.displayName.match(/(\S+)/)[0]}`;
 
@@ -295,7 +268,6 @@
 
             if (!window.localStorage.getItem("kijijiMapDataDate") || new Date().getTime() - window.localStorage.getItem(
                     "kijijiMapDataDate") > 600000) {
-                console.log("got it from the DB");
                 database.ref("apt").once('value').then(function (snapshot) {
                     let data = [];
                     let dataObj = snapshot.val();
@@ -308,7 +280,6 @@
                 });
 
             } else {
-                console.log("got it from localStorage")
                 let dataObj = JSON.parse(window.localStorage.getItem("kijijiMapData"));
                 let data = [];
                 for (ad in dataObj) {
@@ -324,7 +295,7 @@
                     let image;
                     let templateString =
                         ` <div class="content-side" idAd="${ad.id}">
-                            <a href="javascript:saveAd(${ad.id})">Save listing</a>
+                            <a class="saveListing" style="display:none;" href="javascript:saveAd(${ad.id})">Save listing</a>
                             <h3>${ad.title}</h3>
                             <h4>${ad.mapAddress}</h3>
                             <p>Date posted:  ${new Date().getDate() !== date.getDate() ? date.toDateString() : "Today,"} ${date.toLocaleTimeString()}</p>
@@ -398,10 +369,12 @@
                                 }
                             }
                         }
-                        database.ref('users/' + currentUser.uid + "/visited").push(
-                            marker.id
-                        );
-                        markVisited([marker]);
+                        if (currentUser) {
+                            database.ref('users/' + currentUser.uid + "/visited").push(
+                                marker.id
+                            );
+                            markVisited([marker]);
+                        }
                     })
                     if (i >= markers.length - 1) {
                         document.getElementById("overlay").style.display = "none";
@@ -426,6 +399,10 @@
                     zIndex: 1000
                 })
             })
+            let saveListing = document.getElementsByClassName('saveListing');
+            for (let i = 0; i < saveListing.length; i++) {
+                saveListing[i].style.display = "inline";
+            }
         }
 
         function saveAd(id) {
@@ -439,6 +416,7 @@
                         })
                     })
             }
+            viewSaved();
         }
 
         function viewSaved() {
@@ -449,13 +427,15 @@
                         ads.push(child.val());
                     })
                     let sidebar = document.getElementById("sidebar");
+                    if (ads.length < 1) {
+                        sidebar.innerHTML = `<h2 style="padding:5vw;">You do not have any saved listings</h2>`;
+                    } else {
+                        sidebar.innerHTML = "";
+                        sidebar.innerHTML = ads.reduce((prev, ad) => {
+                            let date = new Date(ad.datePosted)
 
-                    sidebar.innerHTML = "";
-                    sidebar.innerHTML = ads.reduce((prev, ad) => {
-                        let date = new Date(ad.datePosted)
-
-                        return prev +
-                            `
+                            return prev +
+                                `
                         <div class="content-side" idAd="${ad.id}">
                             <h3>${ad.title}</h3>
                             <a href="javascript:removeSaved(${ad.id})">Remove listing</a>
@@ -469,14 +449,15 @@
                         </div>
                         *********************************************************************************
                         `
-                    }, '');
-                    let contentNodes = document.getElementsByClassName("content-side");
-                    for (let j = 0; j < contentNodes.length; j++) {
-                        let childNodes = document.getElementsByClassName("content-side")[j].childNodes;
-                        for (let i = 0; i < childNodes.length; i++) {
-                            if (childNodes[i].tagName === "IMG" || childNodes[i].tagName === "img") {
-                                childNodes[i].setAttribute("src", childNodes[i].getAttribute(
-                                    "data-src"))
+                        }, '');
+                        let contentNodes = document.getElementsByClassName("content-side");
+                        for (let j = 0; j < contentNodes.length; j++) {
+                            let childNodes = document.getElementsByClassName("content-side")[j].childNodes;
+                            for (let i = 0; i < childNodes.length; i++) {
+                                if (childNodes[i].tagName === "IMG" || childNodes[i].tagName === "img") {
+                                    childNodes[i].setAttribute("src", childNodes[i].getAttribute(
+                                        "data-src"))
+                                }
                             }
                         }
                     }
@@ -484,14 +465,25 @@
                     document.getElementById('map').style.width = "75vw";
                     document.getElementById('map').style.left = "25vw";
 
-                    // document.getElementById('sidebar-container').style.left = "-25vw";
-                    // document.getElementById('map').style.width = "100vw";
-                    // document.getElementById('map').style.left = "0";
+
                 })
         }
 
-        function removeSaved(id) {
+        function closeSaved() {
+            document.getElementById('sidebar-container').style.left = "-25vw";
+            document.getElementById('map').style.width = "100vw";
+            document.getElementById('map').style.left = "0";
+        }
 
+        function closeColorLegend() {
+            document.getElementById("colorLegend").style.display = "none"
+        }
+
+        function viewColorLegend() {
+            document.getElementById("colorLegend").style.display = "inline"
+        }
+
+        function removeSaved(id) {
             if (currentUser) {
                 let ref = database.ref('users/' + currentUser.uid + "/saved");
                 ref.orderByChild("id").equalTo(id).once("value")
