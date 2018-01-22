@@ -83,6 +83,8 @@
     </div>
     <div id="userArea">
         <p id="name"></p>
+        <a style="font-size:0.8em;" href="javascript:viewSaved()">Saved listings</a>
+        <br/>
         <button id="sign" onclick="signIn()">Sign in</button>
     </div>
     <div id="map"></div>
@@ -108,22 +110,6 @@
         var provider = new firebase.auth.GoogleAuthProvider();
 
         var currentUser;
-        // firebase.auth().signInWithPopup(provider).then(function (result) {
-        //     // This gives you a Google Access Token. You can use it to access the Google API.
-        //     var token = result.credential.accessToken;
-        //     // The signed-in user info.
-        //     var user = result.user;
-        //     // ...
-        // }).catch(function (error) {
-        //     // Handle Errors here.
-        //     var errorCode = error.code;
-        //     var errorMessage = error.message;
-        //     // The email of the user's account used.
-        //     var email = error.email;
-        //     // The firebase.auth.AuthCredential type that was used.
-        //     var credential = error.credential;
-        //     // ...
-        // });
 
         firebase.auth().onAuthStateChanged(function (user) {
             let signButton = document.getElementById("sign");
@@ -169,6 +155,7 @@
 
                 // ...
             }).catch(function (error) {
+                console.log(error);
                 // Handle Errors here.
                 var errorCode = error.code;
                 var errorMessage = error.message;
@@ -337,6 +324,7 @@
                     let image;
                     let templateString =
                         ` <div class="content-side" idAd="${ad.id}">
+                            <a href="javascript:saveAd(${ad.id})">Save listing</a>
                             <h3>${ad.title}</h3>
                             <h4>${ad.mapAddress}</h3>
                             <p>Date posted:  ${new Date().getDate() !== date.getDate() ? date.toDateString() : "Today,"} ${date.toLocaleTimeString()}</p>
@@ -344,7 +332,7 @@
                             <a href="${ad.link}" target="_blank">View to Kijiji</a><br/>
                             <a href="https://www.google.ca/maps/place/${ad.mapAddress.replace(/ /g, "+")}" target="_blank">View on Google Maps</a>
                             <br/>
-                            <img style="width:200px;max-height:250px"src=${ad.thumbnail}></img>
+                            <img data-src=${ad.thumbnail} style=${ad.thumbnail?"min-height:200px;max-height:200px":"display:none;"}></img>
                         </div>
                     `;
                     if (!ad.title) {
@@ -400,6 +388,16 @@
                     marker.addListener("click", () => {
                         markers.forEach(mark => mark.infoWindow.close());
                         marker.infoWindow.open(map, marker);
+                        let contentNodes = document.getElementsByClassName("content-side");
+                        for (let j = 0; j < contentNodes.length; j++) {
+                            let childNodes = document.getElementsByClassName("content-side")[j].childNodes;
+                            for (let i = 0; i < childNodes.length; i++) {
+                                if (childNodes[i].tagName === "IMG" || childNodes[i].tagName === "img") {
+                                    childNodes[i].setAttribute("src", childNodes[i].getAttribute(
+                                        "data-src"))
+                                }
+                            }
+                        }
                         database.ref('users/' + currentUser.uid + "/visited").push(
                             marker.id
                         );
@@ -409,105 +407,12 @@
                         document.getElementById("overlay").style.display = "none";
                     }
                 });
-
-                if (window.innerWidth > 800) {
-
-                    map.addListener("dragend", fillSidebar);
-                    map.addListener("zoom_changed", () => {
-                        if (map.getZoom() > 15) {
-                            fillSidebar();
-                            document.getElementById('sidebar-container').style.left = "0vw";
-                            document.getElementById('map').style.width = "75vw";
-                            document.getElementById('map').style.left = "25vw";
-
-
-                        } else {
-                            document.getElementById('sidebar-container').style.left = "-25vw";
-                            document.getElementById('map').style.width = "100vw";
-                            document.getElementById('map').style.left = "0";
-                        }
-                    })
-
-                    function fillSidebar() {
-                        let currentMarker;
-                        let sidebar = document.getElementById('sidebar')
-                        sidebar.innerHTML = "";
-                        if (map.getZoom() > 15) {
-                            let bounds = map.getBounds()
-                            let latOffset = (bounds.f.f - bounds.f.b) * 0;
-                            let lngOffset = (bounds.b.f - bounds.b.b) * 0.30;
-                            let latMax = bounds.f.f;
-                            let lngMax = bounds.b.f - lngOffset;
-                            let latMin = bounds.f.b;
-                            let lngMin = bounds.b.b;
-                            markers.forEach(marker => {
-                                if (marker.getPosition().lng() > lngMin &&
-                                    marker.getPosition().lng() < lngMax &&
-                                    marker.getPosition().lat() > latMin &&
-                                    marker.getPosition().lat() < latMax) {
-                                    sidebar.innerHTML += marker.infoWindow.content +
-                                        "<br/>***********************************<br/>";
-                                }
-                            })
-                        }
-
-                        nodesSidebar = document.getElementsByClassName("content-side");
-
-                        for (let i = 0; i < nodesSidebar.length; i++) {
-                            nodesSidebar[i].addEventListener("mouseenter", function () {
-                                markers.forEach(marker => {
-                                    if (marker.id === parseFloat(this.getAttribute('idAd'))) {
-                                        marker.setIcon({
-                                            size: new google.maps.Size(24, 40),
-                                            origin: new google.maps.Point(0, 0),
-                                            anchor: new google.maps.Point(12, 40),
-                                            scaledSize: new google.maps.Size(24, 40),
-                                            url: './markers/highlight.png',
-                                            zIndex: -1000
-                                        })
-                                    }
-                                })
-                            }.bind(nodesSidebar[i]));
-                            nodesSidebar[i].addEventListener("mouseleave", function () {
-                                markers.forEach(marker => {
-                                    if (marker.id === parseFloat(this.getAttribute('idAd'))) {
-                                        if (isNaN(marker.mapAddress[0])) {
-                                            marker.setIcon({
-                                                size: new google.maps.Size(24, 40),
-                                                origin: new google.maps.Point(0, 0),
-                                                anchor: new google.maps.Point(12,
-                                                    40),
-                                                scaledSize: new google.maps.Size(24,
-                                                    40),
-                                                url: './markers/area.png',
-                                                zIndex: 10
-                                            })
-                                        } else {
-                                            marker.setIcon({
-                                                size: new google.maps.Size(24, 40),
-                                                origin: new google.maps.Point(0, 0),
-                                                anchor: new google.maps.Point(12,
-                                                    40),
-                                                scaledSize: new google.maps.Size(24,
-                                                    40),
-                                                url: './markers/marker.png',
-                                                zIndex: 10
-                                            })
-                                        }
-
-                                    }
-                                })
-                            }.bind(nodesSidebar[i]));
-                        }
-                    }
-                }
             };
 
 
         }
 
         function markVisited(allMarkers, visited) {
-            console.log(visited);
             if (visited) {
                 allMarkers = allMarkers.filter(marker => visited.includes(marker.id))
             }
@@ -522,11 +427,85 @@
                 })
             })
         }
+
+        function saveAd(id) {
+            if (currentUser) {
+                database.ref("apt").orderByChild("id").equalTo(id).once("value")
+                    .then(snap => {
+                        snap.forEach(function (child) {
+                            database.ref('users/' + currentUser.uid + "/saved").push(
+                                child.val()
+                            );
+                        })
+                    })
+            }
+        }
+
+        function viewSaved() {
+            database.ref('users/' + currentUser.uid + "/saved").once("value")
+                .then(snap => {
+                    let ads = [];
+                    snap.forEach(function (child) {
+                        ads.push(child.val());
+                    })
+                    let sidebar = document.getElementById("sidebar");
+
+                    sidebar.innerHTML = "";
+                    sidebar.innerHTML = ads.reduce((prev, ad) => {
+                        let date = new Date(ad.datePosted)
+
+                        return prev +
+                            `
+                        <div class="content-side" idAd="${ad.id}">
+                            <h3>${ad.title}</h3>
+                            <a href="javascript:removeSaved(${ad.id})">Remove listing</a>
+                            <h4>${ad.mapAddress}</h3>
+                            <p>Date posted:  ${new Date().getDate() !== date.getDate() ? date.toDateString() : "Today,"} ${date.toLocaleTimeString()}</p>
+                            <h3>${ad.price > 0 ? ad.price/100 : "Sur Demande"}$ </h3>
+                            <a href="${ad.link}" target="_blank">View to Kijiji</a><br/>
+                            <a href="https://www.google.ca/maps/place/${ad.mapAddress.replace(/ /g, "+")}" target="_blank">View on Google Maps</a>
+                            <br/>
+                            <img data-src=${ad.thumbnail} style=${ad.thumbnail?"min-height:200px;max-height:200px":"display:none;"}></img>
+                        </div>
+                        *********************************************************************************
+                        `
+                    }, '');
+                    let contentNodes = document.getElementsByClassName("content-side");
+                    for (let j = 0; j < contentNodes.length; j++) {
+                        let childNodes = document.getElementsByClassName("content-side")[j].childNodes;
+                        for (let i = 0; i < childNodes.length; i++) {
+                            if (childNodes[i].tagName === "IMG" || childNodes[i].tagName === "img") {
+                                childNodes[i].setAttribute("src", childNodes[i].getAttribute(
+                                    "data-src"))
+                            }
+                        }
+                    }
+                    document.getElementById('sidebar-container').style.left = "0vw";
+                    document.getElementById('map').style.width = "75vw";
+                    document.getElementById('map').style.left = "25vw";
+
+                    // document.getElementById('sidebar-container').style.left = "-25vw";
+                    // document.getElementById('map').style.width = "100vw";
+                    // document.getElementById('map').style.left = "0";
+                })
+        }
+
+        function removeSaved(id) {
+
+            if (currentUser) {
+                let ref = database.ref('users/' + currentUser.uid + "/saved");
+                ref.orderByChild("id").equalTo(id).once("value")
+                    .then(snap => {
+                        snap.forEach(function (child) {
+                            ref.child(child.key).remove();
+                        })
+                    })
+            }
+            viewSaved();
+        }
+
         /*
 
-
-thumbnails should be downloaded only when you click on marker
-    set img tag only on click or on fill side bar?
 
 
 For saving listings
@@ -539,6 +518,101 @@ For saving listings
 other things to do
 
  */
+
+        //SIDEBAR FUNCTIONNALITY REMOVED FOR NOW.
+        //INSIDE THE ADDMARKER FUNCTION
+
+        // if (window.innerWidth > 800) {
+
+        //     map.addListener("dragend", fillSidebar);
+        //     map.addListener("zoom_changed", () => {
+        //         if (map.getZoom() > 15) {
+        //             fillSidebar();
+        //             document.getElementById('sidebar-container').style.left = "0vw";
+        //             document.getElementById('map').style.width = "75vw";
+        //             document.getElementById('map').style.left = "25vw";
+
+
+        //         } else {
+        //             document.getElementById('sidebar-container').style.left = "-25vw";
+        //             document.getElementById('map').style.width = "100vw";
+        //             document.getElementById('map').style.left = "0";
+        //         }
+        //     })
+
+        //     function fillSidebar() {
+        //         let currentMarker;
+        //         let sidebar = document.getElementById('sidebar')
+        //         sidebar.innerHTML = "";
+        //         if (map.getZoom() > 15) {
+        //             let bounds = map.getBounds()
+        //             let latOffset = (bounds.f.f - bounds.f.b) * 0;
+        //             let lngOffset = (bounds.b.f - bounds.b.b) * 0.30;
+        //             let latMax = bounds.f.f;
+        //             let lngMax = bounds.b.f - lngOffset;
+        //             let latMin = bounds.f.b;
+        //             let lngMin = bounds.b.b;
+        //             markers.forEach(marker => {
+        //                 if (marker.getPosition().lng() > lngMin &&
+        //                     marker.getPosition().lng() < lngMax &&
+        //                     marker.getPosition().lat() > latMin &&
+        //                     marker.getPosition().lat() < latMax) {
+        //                     sidebar.innerHTML += marker.infoWindow.content +
+        //                         "<br/>***********************************<br/>";
+        //                 }
+        //             })
+        //         }
+
+        //         nodesSidebar = document.getElementsByClassName("content-side");
+
+        //         for (let i = 0; i < nodesSidebar.length; i++) {
+        //             nodesSidebar[i].addEventListener("mouseenter", function () {
+        //                 markers.forEach(marker => {
+        //                     if (marker.id === parseFloat(this.getAttribute('idAd'))) {
+        //                         marker.setIcon({
+        //                             size: new google.maps.Size(24, 40),
+        //                             origin: new google.maps.Point(0, 0),
+        //                             anchor: new google.maps.Point(12, 40),
+        //                             scaledSize: new google.maps.Size(24, 40),
+        //                             url: './markers/highlight.png',
+        //                             zIndex: -1000
+        //                         })
+        //                     }
+        //                 })
+        //             }.bind(nodesSidebar[i]));
+        //             nodesSidebar[i].addEventListener("mouseleave", function () {
+        //                 markers.forEach(marker => {
+        //                     if (marker.id === parseFloat(this.getAttribute('idAd'))) {
+        //                         if (isNaN(marker.mapAddress[0])) {
+        //                             marker.setIcon({
+        //                                 size: new google.maps.Size(24, 40),
+        //                                 origin: new google.maps.Point(0, 0),
+        //                                 anchor: new google.maps.Point(12,
+        //                                     40),
+        //                                 scaledSize: new google.maps.Size(24,
+        //                                     40),
+        //                                 url: './markers/area.png',
+        //                                 zIndex: 10
+        //                             })
+        //                         } else {
+        //                             marker.setIcon({
+        //                                 size: new google.maps.Size(24, 40),
+        //                                 origin: new google.maps.Point(0, 0),
+        //                                 anchor: new google.maps.Point(12,
+        //                                     40),
+        //                                 scaledSize: new google.maps.Size(24,
+        //                                     40),
+        //                                 url: './markers/marker.png',
+        //                                 zIndex: 10
+        //                             })
+        //                         }
+
+        //                     }
+        //                 })
+        //             }.bind(nodesSidebar[i]));
+        //         }
+        //     }
+        // }
     </script>
 
 
