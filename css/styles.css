@@ -40,6 +40,9 @@ body {
 
 #colorLegend li {
     margin: 4px 0px 4px 0px;
+    padding: 5px;
+    border-radius: 5px;
+    color: white;
 }
 
 #closeColorLegend {
