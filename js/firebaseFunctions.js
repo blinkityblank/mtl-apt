@@ -43,6 +43,15 @@
                  markVisited(markers, visited);
              })
          removeVisitedThreeDaysOld();
+         database.ref('users/' + currentUser.uid + "/saved").once('value').then(function (snapshot) {
+             let savedObj = snapshot.val();
+             let saved = [];
+             for (ad in savedObj) {
+                 saved.push(savedObj[ad]["id"]);
+             }
+             currentUser.savedAds = saved;
+         })
+
      } else {
          document.getElementById("viewSaved").style.display = "none";
          signButton.setAttribute("href", "javascript:signIn()");

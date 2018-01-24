@@ -157,10 +157,7 @@ function initMap() {
                             <h4>${ad.mapAddress}</h3>
                             <p>Date posted:  ${new Date().getDate() !== date.getDate() ? date.toDateString() : "Today,"} ${date.toLocaleTimeString()}</p>
                             <h3>${ad.price > 0 ? ad.price/100 : "Sur Demande"}$ </h3>
-                            <a href="${ad.link}" target="_blank">View to Kijiji</a><br/>
-                            <a href="https://www.google.ca/maps/place/${ad.mapAddress.replace(/ /g, "+")}" target="_blank">View on Google Maps</a>
-                            <br/>
-                            <img data-src=${ad.thumbnail} style=${ad.thumbnail?"min-height:200px;max-height:200px":"display:none;"}></img>
+                            <a href="${ad.link}" target="_blank"><img data-src=${ad.thumbnail} style=${ad.thumbnail?"min-height:200px;max-height:200px":"display:none;"}></img></a>
                         </div>
                     `;
             if (!ad.title) {
@@ -220,9 +217,14 @@ function initMap() {
                 for (let j = 0; j < contentNodes.length; j++) {
                     let childNodes = document.getElementsByClassName("content-side")[j].childNodes;
                     for (let i = 0; i < childNodes.length; i++) {
-                        if (childNodes[i].tagName === "IMG" || childNodes[i].tagName === "img") {
-                            childNodes[i].setAttribute("src", childNodes[i].getAttribute(
-                                "data-src"))
+                        if (childNodes[i].tagName === "A" || childNodes[i].tagName === "a") {
+                            for (let k = 0; k < childNodes[i].childNodes.length; k++) {
+                                if (childNodes[i].childNodes[k].tagName === "IMG" || childNodes[i].childNodes[k].tagName === "img") {
+                                    childNodes[i].childNodes[k].setAttribute("src", childNodes[i].childNodes[k].getAttribute(
+                                        "data-src"))
+                                }
+                                console.log(k);
+                            }
                         }
                     }
                 }
@@ -264,7 +266,8 @@ function markVisited(allMarkers, visited) {
 }
 
 function saveAd(id) {
-    if (currentUser) {
+    if (currentUser && !currentUser.savedAds.includes(id)) {
+        currentUser.savedAds.push(id);
         database.ref("apt").orderByChild("id").equalTo(id).once("value")
             .then(snap => {
                 snap.forEach(function (child) {
@@ -298,10 +301,7 @@ function viewSaved() {
                             <h4>${ad.mapAddress}</h3>
                             <p>Date posted:  ${new Date().getDate() !== date.getDate() ? date.toDateString() : "Today,"} ${date.toLocaleTimeString()}</p>
                             <h3>${ad.price > 0 ? ad.price/100 : "Sur Demande"}$ </h3>
-                            <a href="${ad.link}" target="_blank">View to Kijiji</a><br/>
-                            <a href="https://www.google.ca/maps/place/${ad.mapAddress.replace(/ /g, "+")}" target="_blank">View on Google Maps</a>
-                            <br/>
-                            <img data-src=${ad.thumbnail} style=${ad.thumbnail?"min-height:200px;max-height:200px":"display:none;"}></img>
+                            <a href="${ad.link}" target="_blank"><img data-src=${ad.thumbnail} style=${ad.thumbnail?"min-height:200px;max-height:200px":"display:none;"}></img></a>
                         </div>
                         *********************************************************************************
                         ${prev}`
@@ -310,9 +310,13 @@ function viewSaved() {
                 for (let j = 0; j < contentNodes.length; j++) {
                     let childNodes = document.getElementsByClassName("content-side")[j].childNodes;
                     for (let i = 0; i < childNodes.length; i++) {
-                        if (childNodes[i].tagName === "IMG" || childNodes[i].tagName === "img") {
-                            childNodes[i].setAttribute("src", childNodes[i].getAttribute(
-                                "data-src"))
+                        if (childNodes[i].tagName === "A" || childNodes[i].tagName === "a") {
+                            for (let k = 0; k < childNodes[i].childNodes.length; k++) {
+                                if (childNodes[i].childNodes[k].tagName === "IMG" || childNodes[i].childNodes[k].tagName === "img") {
+                                    childNodes[i].childNodes[k].setAttribute("src", childNodes[i].childNodes[k].getAttribute(
+                                        "data-src"))
+                                }
+                            }
                         }
                     }
                 }
@@ -321,8 +325,6 @@ function viewSaved() {
             document.getElementById('closeSidebar').style.left = "25vw";
             document.getElementById('map').style.width = "75vw";
             document.getElementById('map').style.left = "25vw";
-
-
         })
 }
 
