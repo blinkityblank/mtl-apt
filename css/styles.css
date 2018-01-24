@@ -13,9 +13,12 @@ body {
 
 #closeSidebar {
     stroke: #888888;
-    position: absolute;
+    background-color: rgba(255, 255, 255, 0.9);
+    position: fixed;
     top: 10px;
-    right: 10px;
+    left: 0vw;
+    margin-left: -45px;
+    transition: 0.5s ease-in-out all;
 }
 
 #closeSidebar:hover {

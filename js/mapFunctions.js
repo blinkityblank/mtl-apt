@@ -318,6 +318,7 @@ function viewSaved() {
                 }
             }
             document.getElementById('sidebar-container').style.left = "0vw";
+            document.getElementById('closeSidebar').style.left = "25vw";
             document.getElementById('map').style.width = "75vw";
             document.getElementById('map').style.left = "25vw";
 
@@ -327,6 +328,7 @@ function viewSaved() {
 
 function closeSaved() {
     document.getElementById('sidebar-container').style.left = "-25vw";
+    document.getElementById('closeSidebar').style.left = "0vw";
     document.getElementById('map').style.width = "100vw";
     document.getElementById('map').style.left = "0";
 }
