@@ -1,3 +1,144 @@
+@media (max-width: 799px) {
+    #closeSidebar {
+        stroke: #888888;
+        background-color: rgba(255, 255, 255, 0.9);
+        position: fixed;
+        top: 10px;
+        left: 0vw;
+        margin-left: -45px;
+        transition: 0.5s ease-in-out all;
+    }
+    #closeSidebar:hover {
+        stroke: #444444;
+        cursor: pointer;
+    }
+    #sidebar-container {
+        z-index: 10000;
+        height: 100vh;
+        width: 90vw;
+        position: fixed;
+        left: -100vw;
+        background-color: white;
+        transition: 0.5s ease-in-out left;
+        overflow-y: scroll;
+    }
+    #sidebar {
+        font-size: 0.8em;
+    }
+    .content-side {
+        padding: 20px;
+    }
+    #userArea {
+        font-size: 0.9em;
+        position: absolute;
+        max-width: 50vw;
+        top: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: white;
+        border-radius: 20px;
+        border: #dddddd 2px solid;
+        line-height: 10px;
+    }
+    #userArea ul {
+        list-style: none;
+        padding: 0;
+    }
+    #userArea li {
+        padding: 10px 10px 10px 10px;
+    }
+    #userArea a {
+        font-size: 0.8em;
+        color: black;
+    }
+    #userArea a:hover {
+        color: gray;
+    }
+    #colorLegend {
+        font-size: 1em;
+        top: 150px;
+        right: 10px;
+        max-width: 400px;
+        width: 400px;
+        position: absolute;
+        z-index: 1000;
+        background-color: white;
+        border-radius: 20px;
+        border: #dddddd 2px solid;
+    }
+}
+
+@media (min-width: 800px) {
+    #closeSidebar {
+        stroke: #888888;
+        background-color: rgba(255, 255, 255, 0.9);
+        position: fixed;
+        top: 10px;
+        left: 0vw;
+        margin-left: -45px;
+        transition: 0.5s ease-in-out all;
+    }
+    #closeSidebar:hover {
+        stroke: #444444;
+        cursor: pointer;
+    }
+    #sidebar-container {
+        z-index: 1;
+        height: 100vh;
+        max-width: 25vw;
+        min-width: 25vw;
+        position: fixed;
+        left: -30vw;
+        background-color: white;
+        transition: 0.5s ease-in-out left;
+        overflow-y: scroll;
+    }
+    #sidebar {
+        max-width: 400px;
+        font-size: 0.8em;
+    }
+    .content-side {
+        padding: 20px;
+    }
+    #userArea {
+        font-size: 1.0em;
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: white;
+        border-radius: 20px;
+        border: #dddddd 2px solid;
+        line-height: 10px;
+    }
+    #userArea ul {
+        padding: 0 20px 0 20px;
+    }
+    #userArea li {
+        display: inline;
+        padding: 0 10px 0 10px;
+    }
+    #userArea a {
+        font-size: 0.8em;
+        color: black;
+    }
+    #userArea a:hover {
+        color: gray;
+    }
+    #colorLegend {
+        font-size: 1em;
+        top: 50px;
+        right: 10px;
+        max-width: 400px;
+        width: 400px;
+        position: absolute;
+        z-index: 1000;
+        background-color: white;
+        border-radius: 20px;
+        border: #dddddd 2px solid;
+    }
+}
+
 body {
     margin: 0;
     font-family: 'Open Sans', sans-serif;
@@ -11,30 +152,36 @@ body {
     transition: 0.5s ease-in-out all;
 }
 
-#closeSidebar {
-    stroke: #888888;
-    background-color: rgba(255, 255, 255, 0.9);
-    position: fixed;
-    top: 10px;
-    left: 0vw;
-    margin-left: -45px;
-    transition: 0.5s ease-in-out all;
+a svg.heart {
+    fill: none;
+    stroke: #000000;
+    stroke-width: 3;
+    float: right;
+    margin-top: 20px;
+    transition: 0.1s ease-in-out all;
 }
 
-#closeSidebar:hover {
-    stroke: #444444;
+a svg.heart-saved {
+    fill: #ca0000;
+    stroke: #ca0000;
+    stroke-width: 3;
+    transform: scale(1.2);
+}
+
+a svg.heart:hover {
     cursor: pointer;
+    transform: scale(1.1);
 }
 
-#colorLegend {
-    font-size: 1em;
-    top: 50px;
-    right: 10px;
-    position: absolute;
-    z-index: 1000;
-    background-color: white;
-    border-radius: 20px;
-    border: #dddddd 2px solid;
+a svg.crossedHeart {
+    float: right;
+    margin-top: 20%;
+    transition: 0.1s ease-in-out all;
+}
+
+a svg.crossedHeart:hover {
+    cursor: pointer;
+    transform: scale(1.1);
 }
 
 #colorLegend ul {
@@ -58,57 +205,6 @@ body {
 #closeColorLegend:hover {
     stroke: #444444;
     cursor: pointer;
-}
-
-#sidebar-container {
-    z-index: 1;
-    height: 100vh;
-    max-width: 25vw;
-    min-width: 25vw;
-    position: fixed;
-    left: -30vw;
-    background-color: white;
-    transition: 0.5s ease-in-out left;
-    overflow-y: scroll;
-}
-
-#sidebar {
-    max-width: 400px;
-    font-size: 0.8em;
-}
-
-.content-side {
-    padding: 20px;
-}
-
-#userArea {
-    font-size: 1.0em;
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 1000;
-    background-color: white;
-    border-radius: 20px;
-    border: #dddddd 2px solid;
-    line-height: 10px;
-}
-
-#userArea ul {
-    padding: 0;
-}
-
-#userArea li {
-    display: inline;
-    padding: 0 10px 0 10px;
-}
-
-#userArea a {
-    font-size: 0.8em;
-    color: black;
-}
-
-#userArea a:hover {
-    color: gray;
 }
 
 #overlay {

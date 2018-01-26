@@ -36,11 +36,11 @@
          database.ref('users/' + currentUser.uid + "/visited").once('value')
              .then(function (snapshot) {
                  let visitedObj = snapshot.val();
-                 let visited = [];
+                 currentUser.visited = [];
                  for (ad in visitedObj) {
-                     visited.push(visitedObj[ad]["id"]);
+                     currentUser.visited.push(visitedObj[ad]["id"]);
                  }
-                 markVisited(markers, visited);
+                 markVisited(markers, currentUser.visited);
              })
          removeVisitedThreeDaysOld();
          database.ref('users/' + currentUser.uid + "/saved").once('value').then(function (snapshot) {
