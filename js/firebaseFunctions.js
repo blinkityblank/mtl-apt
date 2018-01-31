@@ -7,16 +7,17 @@
      storageBucket: "",
      messagingSenderId: "38299452300"
  };
- firebase.initializeApp(config);
- const database = firebase.database();
 
+ firebase.initializeApp(config);
+
+
+ const database = firebase.database();
  const provider = new firebase.auth.GoogleAuthProvider();
 
- let currentUser;
-
+ //When a user is logged in, remove visited index from database if it is more than 3 days old
  function removeVisitedThreeDaysOld() {
-     let currentTime = new Date().getTime();
-     let refUserVisited = database.ref('users/' + currentUser.uid + "/visited");
+     const currentTime = new Date().getTime();
+     const refUserVisited = database.ref('users/' + firebase.currentUser.uid + "/visited");
      refUserVisited
          .orderByChild("dateVisited").endAt(currentTime - 259200000).once("value", function (snap) {
              snap.forEach(function (child) {
@@ -25,67 +26,75 @@
          })
  }
 
+ //Get the timestamp of the last time an ad was added to the database
  function getLastUpdatedDate() {
      database.ref('lastUpdated/').once("value", function (snap) {
-         snap.val();
-         let date = new Date(snap.val().latest);
+         const date = new Date(snap.val().latest);
          document.getElementById("lastUpdateDate").innerText = date.toDateString() + " " + date.toLocaleTimeString();
      })
  }
 
+
+ //function triggered everytime a user signs in OR out
  firebase.auth().onAuthStateChanged(function (user) {
-     let signButton = document.getElementById("sign");
+     const signButton = document.getElementById("sign");
      if (user) {
+         //Chenge what is displayed in the menu based on if a user is logged in
          document.getElementById("viewSaved").style.display = "inline";
          signButton.setAttribute("href", "javascript:signOut()");
          signButton.textContent = "Sign Out";
          document.getElementById("name").innerHTML = `Hi ${user.displayName.match(/(\S+)/)[0]}`;
-         currentUser = user;
-         database.ref('users/' + currentUser.uid + "/visited").once('value')
+         firebase.currentUser = user;
+         //Get the visited indexes for the current user
+         database.ref('users/' + firebase.currentUser.uid + "/visited").once('value')
              .then(function (snapshot) {
                  let visitedObj = snapshot.val();
-                 currentUser.visited = [];
+                 firebase.currentUser.visited = [];
                  for (ad in visitedObj) {
-                     currentUser.visited.push(visitedObj[ad]["id"]);
+                     firebase.currentUser.visited.push(visitedObj[ad]["id"]);
                  }
-                 markVisited(markers, currentUser.visited);
+                 markVisited(markers, firebase.currentUser.visited);
              })
          removeVisitedThreeDaysOld();
-         database.ref('users/' + currentUser.uid + "/saved").once('value').then(function (snapshot) {
-             let savedObj = snapshot.val();
+         //Get the saved ads from the database for a given user
+         database.ref('users/' + firebase.currentUser.uid + "/saved").once('value').then(function (snapshot) {
+             const savedObj = snapshot.val();
              let saved = [];
              for (ad in savedObj) {
                  saved.push(savedObj[ad]["id"]);
              }
-             currentUser.savedAds = saved;
+             firebase.currentUser.savedAds = saved;
          })
 
      } else {
+         //Chenge what is displayed in the menu based on if a user is not logged in
          document.getElementById("viewSaved").style.display = "none";
          signButton.setAttribute("href", "javascript:signIn()");
          signButton.textContent = "Sign in with Google";
          document.getElementById("name").innerHTML = `Not signed in`;
-         currentUser = null;
+         firebase.currentUser = null;
      }
  });
 
-
+ //Function triggered when a user clicks on the sign out link
  function signOut() {
      firebase.auth().signOut().then(function () {
          document.getElementById("viewSaved").style.display = "none";
          document.getElementById("name").innerHTML = `Not signed in`;
          initMap();
      }).catch(function (error) {
+         console.log(error);
          // An error happened.
      });
  }
 
+ //Function triggered when a user clicks on the sign in link
  function signIn() {
      firebase.auth().signInWithPopup(provider).then(function (result) {
          // This gives you a Google Access Token. You can use it to access the Google API.
-         var token = result.credential.accessToken;
+         const token = result.credential.accessToken;
          // The signed-in user info.
-         var user = result.user;
+         const user = result.user;
          document.getElementById("viewSaved").style.display = "inline";
          document.getElementById("name").innerHTML =
              `Hi ${user.displayName.match(/(\S+)/)[0]}`;
@@ -93,13 +102,5 @@
          // ...
      }).catch(function (error) {
          console.log(error);
-         // Handle Errors here.
-         var errorCode = error.code;
-         var errorMessage = error.message;
-         // The email of the user's account used.
-         var email = error.email;
-         // The firebase.auth.AuthCredential type that was used.
-         var credential = error.credential;
-         // ...
      });
  }

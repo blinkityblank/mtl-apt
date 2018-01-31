@@ -1,8 +1,8 @@
-let nodesSidebar;
 let markers = [];
 let mobile = window.matchMedia("(max-width: 799px)").matches;
 
-let heart = `<svg version="1.1"
+//SVG for the heart icon
+const heart = `<svg version="1.1"
 class="heart"
 width="40" height="37">
 <g>
@@ -11,8 +11,8 @@ width="40" height="37">
 </g>
 </svg>`
 
-let crossedHeart = `
-
+//SVG for the crossed out heart icon
+const crossedHeart = `
 <svg version="1.1"
 class="crossedHeart" 
 width="40" height="37">
@@ -31,13 +31,13 @@ width="40" height="37">
 //Google Maps function to initialize the map
 function initMap() {
     let contentString;
-    let montrealPos = {
+    const montrealPos = {
         lat: 45.5017,
         lng: -73.5673
     }
 
     //Elements to style the map
-    let styledMapType = new google.maps.StyledMapType(
+    const styledMapType = new google.maps.StyledMapType(
 
         [{
                 "elementType": "geometry",
@@ -152,10 +152,15 @@ function initMap() {
     map.mapTypes.set('styled_map', styledMapType);
     map.setMapTypeId('styled_map');
 
-    //If the ads data was gathered lesss than 10mins ago, get it from the localStorage, otherwise go poll the API to get the data
     getData(map);
+    getLastUpdatedDate();
+    if (mobile) {
+        document.getElementById("menu-icon").style.display = "inline";
+        document.getElementById("closeUserArea").style.display = "inline";
+    }
 };
 
+//Adding event listeners to the markers
 function addListenersMarkers(map) {
     map.addListener("click", () => {
         markers.forEach(mark => mark.infoWindow.close());
@@ -163,10 +168,14 @@ function addListenersMarkers(map) {
             closeUserArea()
         }
     })
+    //If you click on any marker
     markers.forEach((marker, i) => {
         marker.addListener("click", () => {
+            //Closes any other infoWindow that's open
             markers.forEach(mark => mark.infoWindow.close());
+            //Opens the infoWindow linked to the marker
             marker.infoWindow.open(map, marker);
+            //Lazy load for the info windows
             let contentNodes = document.getElementsByClassName("content-side");
             for (let j = 0; j < contentNodes.length; j++) {
                 let childNodes = document.getElementsByClassName("content-side")[j].childNodes;
@@ -181,8 +190,9 @@ function addListenersMarkers(map) {
                     }
                 }
             }
-            if (currentUser) {
-                database.ref('users/' + currentUser.uid + "/visited").push({
+            //If a user is logged in, mark the ad as having been visited
+            if (firebase.currentUser) {
+                database.ref('users/' + firebase.currentUser.uid + "/visited").push({
                     "id": marker.id,
                     "dateVisited": new Date().getTime()
                 });
@@ -192,18 +202,21 @@ function addListenersMarkers(map) {
                 closeUserArea()
             }
         })
+        //Hide the landing page overlay once all of that is done.
         if (i >= markers.length - 1) {
             document.getElementById("overlay").style.display = "none";
         }
     });
 }
 
+//Function to get the data. If the data is more than 10mins old, poll the database, 
+//otherwise, get it from the localStorage(if already there)
 function getData(map) {
     if (!window.localStorage.getItem("kijijiMapDataDate") || new Date().getTime() - window.localStorage.getItem(
             "kijijiMapDataDate") > 600000) {
         database.ref("apt").once('value').then(function (snapshot) {
             let data = [];
-            let dataObj = snapshot.val();
+            const dataObj = snapshot.val();
             for (ad in dataObj) {
                 data.push(dataObj[ad]);
             }
@@ -213,7 +226,7 @@ function getData(map) {
         });
 
     } else {
-        let dataObj = JSON.parse(window.localStorage.getItem("kijijiMapData"));
+        const dataObj = JSON.parse(window.localStorage.getItem("kijijiMapData"));
         let data = [];
         for (ad in dataObj) {
             data.push(dataObj[ad]);
@@ -221,12 +234,19 @@ function getData(map) {
         addMarkers(data, map);
     }
 }
-
+//Add the markers and the infoWindows to the map.
 function addMarkers(data, map) {
     data.reduce((prev, ad, i) => {
-        let date = new Date(ad.datePosted)
+        // if the ad is outside the predefined area, don't add it.
+        if (ad.longitude > -73.5202339 ||
+            ad.longitude < -73.6772573 ||
+            ad.latitude < 45.3964454 ||
+            ad.latitude > 45.5735141) {
+            return false;
+        }
+        const date = new Date(ad.datePosted)
         let image;
-        let templateString =
+        const templateString =
             ` <div class="content-side" idAd="${ad.id}">
                 <a class="saveListing" style="display:none;" href="javascript:saveAd(${ad.id})">${heart}</a>
                 <h3>${ad.title}</h3>
@@ -236,6 +256,7 @@ function addMarkers(data, map) {
                 <a href="${ad.link}" target="_blank">${ad.thumbnail?'<img data-src="' + ad.thumbnail + '" style="min-height:200px;max-height:200px";"display:none;"></img>':'View on Kijiji'}</a>
             </div>
                 `;
+        //If the ad doesn't have a title, forget about it
         if (!ad.title) {
             return false;
         }
@@ -245,26 +266,21 @@ function addMarkers(data, map) {
             anchor: new google.maps.Point(12, 40),
             scaledSize: new google.maps.Size(24, 40)
         }
+        //If the ad is at the same place as the previous ad, add the ad to the same marker
         if (ad.longitude === prev.longitude && ad.latitude === prev.latitude && i > 1) {
             contentString += '<br/>***********************************<br/>'
             contentString += templateString;
             markers[markers.length - 1].infoWindow.setContent(contentString);
         } else {
+            //If the location isn't an exact address, use a blue marker instead of a red one.
             if (isNaN(ad.mapAddress[0])) {
                 image.url = './markers/area.png'
             } else {
                 image.url = './markers/marker.png'
             }
-
-            if (ad.longitude > -73.5202339 ||
-                ad.longitude < -73.6772573 ||
-                ad.latitude < 45.3964454 ||
-                ad.latitude > 45.5735141) {
-                return false;
-            }
             contentString = templateString
 
-
+            //Add marker to the global array of markers
             markers.push(new google.maps.Marker({
                 position: {
                     lat: ad.latitude,
@@ -285,9 +301,10 @@ function addMarkers(data, map) {
     addListenersMarkers(map);
 }
 
+//Set the ads already visited by the user with a purple marker 
 function markVisited(allMarkers, visited) {
     if (visited) {
-        allMarkers = allMarkers.filter(marker => currentUser.visited.includes(marker.id))
+        allMarkers = allMarkers.filter(marker => firebase.currentUser.visited.includes(marker.id))
     }
     allMarkers.forEach(marker => {
         marker.setIcon({
@@ -305,14 +322,15 @@ function markVisited(allMarkers, visited) {
     }
 }
 
+//Add a saved listing to the database
 function saveAd(id) {
-    if (currentUser && !currentUser.savedAds.includes(id)) {
-        currentUser.savedAds.push(id);
+    if (firebase.currentUser && !firebase.currentUser.savedAds.includes(id)) {
+        firebase.currentUser.savedAds.push(id);
         addHeartSaved(id);
         database.ref("apt").orderByChild("id").equalTo(id).once("value")
             .then(snap => {
                 snap.forEach(function (child) {
-                    database.ref('users/' + currentUser.uid + "/saved").push(
+                    database.ref('users/' + firebase.currentUser.uid + "/saved").push(
                         child.val()
                     );
                 })
@@ -321,23 +339,24 @@ function saveAd(id) {
     viewSaved();
 }
 
+//View the user's saved listings in the sidebar
 function viewSaved() {
     if (mobile) {
         closeUserArea()
     }
-    database.ref('users/' + currentUser.uid + "/saved").once("value")
+    database.ref('users/' + firebase.currentUser.uid + "/saved").once("value")
         .then(snap => {
             let ads = [];
             snap.forEach(function (child) {
                 ads.push(child.val());
             })
-            let sidebar = document.getElementById("sidebar");
+            const sidebar = document.getElementById("sidebar");
             if (ads.length < 1) {
                 sidebar.innerHTML = `<h2 style="padding:5vw;"> You do not have any saved listings </h2>`;
             } else {
                 sidebar.innerHTML = "";
                 sidebar.innerHTML = ads.reduce((prev, ad) => {
-                    let date = new Date(ad.datePosted)
+                    const date = new Date(ad.datePosted)
 
                     return `<div class="content-side" idAd="${ad.id}">
                             <h3>${ad.title}</h3>
@@ -350,7 +369,8 @@ function viewSaved() {
                         *********************************************************************************
                         ${prev}`
                 }, '');
-                let contentNodes = document.getElementsByClassName("content-side");
+                //Lazy load for the sidebar images
+                const contentNodes = document.getElementsByClassName("content-side");
                 for (let j = 0; j < contentNodes.length; j++) {
                     let childNodes = document.getElementsByClassName("content-side")[j].childNodes;
                     for (let i = 0; i < childNodes.length; i++) {
@@ -365,6 +385,7 @@ function viewSaved() {
                     }
                 }
             }
+            //Show the sidebar, according to the screen size
             if (mobile) {
                 document.getElementById('sidebar-container').style.left = "5vw";
                 document.getElementById('closeSidebar').style.left = "95vw";
@@ -378,6 +399,7 @@ function viewSaved() {
         })
 }
 
+//Close sidebar
 function closeSaved() {
     if (mobile) {
         document.getElementById('sidebar-container').style.left = "-100vw";
@@ -391,6 +413,7 @@ function closeSaved() {
     document.getElementById('map').style.left = "0";
 }
 
+
 function closeColorLegend() {
     document.getElementById("colorLegend").style.display = "none"
 }
@@ -399,23 +422,26 @@ function viewColorLegend() {
     document.getElementById("colorLegend").style.display = "inline"
 }
 
+
+//Remove a saved listing from the sidebar and from the database
 function removeSaved(id) {
-    if (currentUser) {
-        let ref = database.ref('users/' + currentUser.uid + "/saved");
+    if (firebase.currentUser) {
+        const ref = database.ref('users/' + firebase.currentUser.uid + "/saved");
         ref.orderByChild("id").equalTo(id).once("value")
             .then(snap => {
                 snap.forEach(function (child) {
                     ref.child(child.key).remove();
                 })
             })
-        currentUser.savedAds = currentUser.savedAds.filter(ad => ad.toString() !== id.toString());
+        firebase.currentUser.savedAds = firebase.currentUser.savedAds.filter(ad => ad.toString() !== id.toString());
     }
     viewSaved();
     removeHeartSaved(id)
 }
 
+//If a user is logged in, add hearts to the infoWindows
 function addHeartSaved(id) {
-    let contentNodes = document.getElementsByClassName("content-side");
+    const contentNodes = document.getElementsByClassName("content-side");
 
     for (let i = 0; i < contentNodes.length; i++) {
         if (contentNodes[i].getAttribute("idAd") === id.toString()) {
@@ -425,8 +451,9 @@ function addHeartSaved(id) {
     }
 }
 
+//If a user logs out, remove hearts to the infoWindows
 function removeHeartSaved(id) {
-    let contentNodes = document.getElementsByClassName("content-side");
+    const contentNodes = document.getElementsByClassName("content-side");
     for (let i = 0; i < contentNodes.length; i++) {
         if (contentNodes[i].getAttribute("idAd") === id.toString() && contentNodes[i].firstElementChild.className === "saveListing") {
             contentNodes[i].firstElementChild.firstElementChild.style.stroke = "#000000"
@@ -443,6 +470,7 @@ function closeUserArea() {
     document.getElementById("userArea").style.right = "-210px";
 }
 
+//Event listener on resizing the window to change the mobile variable
 window.addEventListener("resize", () => {
     mobile = window.matchMedia("(max-width: 799px)").matches
     if (mobile) {
@@ -450,10 +478,3 @@ window.addEventListener("resize", () => {
         document.getElementById("closeUserArea").style.display = "inline";
     }
 })
-
-if (mobile) {
-    document.getElementById("menu-icon").style.display = "inline";
-    document.getElementById("closeUserArea").style.display = "inline";
-}
-
-getLastUpdatedDate()
