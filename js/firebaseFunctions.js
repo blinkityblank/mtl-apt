@@ -18,11 +18,19 @@
      let currentTime = new Date().getTime();
      let refUserVisited = database.ref('users/' + currentUser.uid + "/visited");
      refUserVisited
-         .orderByChild("dateVisited").endAt(currentTime - 259200000).on("value", function (snap) {
+         .orderByChild("dateVisited").endAt(currentTime - 259200000).once("value", function (snap) {
              snap.forEach(function (child) {
                  refUserVisited.child(child.key).remove();
              })
          })
+ }
+
+ function getLastUpdatedDate() {
+     database.ref('lastUpdated/').once("value", function (snap) {
+         snap.val();
+         let date = new Date(snap.val().latest);
+         document.getElementById("lastUpdateDate").innerText = date.toDateString() + " " + date.toLocaleTimeString();
+     })
  }
 
  firebase.auth().onAuthStateChanged(function (user) {

@@ -159,6 +159,9 @@ function initMap() {
 function addListenersMarkers(map) {
     map.addListener("click", () => {
         markers.forEach(mark => mark.infoWindow.close());
+        if (mobile) {
+            closeUserArea()
+        }
     })
     markers.forEach((marker, i) => {
         marker.addListener("click", () => {
@@ -184,6 +187,9 @@ function addListenersMarkers(map) {
                     "dateVisited": new Date().getTime()
                 });
                 markVisited([marker]);
+            }
+            if (mobile) {
+                closeUserArea()
             }
         })
         if (i >= markers.length - 1) {
@@ -316,6 +322,9 @@ function saveAd(id) {
 }
 
 function viewSaved() {
+    if (mobile) {
+        closeUserArea()
+    }
     database.ref('users/' + currentUser.uid + "/saved").once("value")
         .then(snap => {
             let ads = [];
@@ -359,6 +368,7 @@ function viewSaved() {
             if (mobile) {
                 document.getElementById('sidebar-container').style.left = "5vw";
                 document.getElementById('closeSidebar').style.left = "95vw";
+
             } else {
                 document.getElementById('sidebar-container').style.left = "0vw";
                 document.getElementById('closeSidebar').style.left = "25vw";
@@ -425,4 +435,25 @@ function removeHeartSaved(id) {
     }
 }
 
-window.addEventListener("resize", () => mobile = window.matchMedia("(max-width: 799px)").matches)
+function showMenu() {
+    document.getElementById("userArea").style.right = "0px";
+}
+
+function closeUserArea() {
+    document.getElementById("userArea").style.right = "-210px";
+}
+
+window.addEventListener("resize", () => {
+    mobile = window.matchMedia("(max-width: 799px)").matches
+    if (mobile) {
+        document.getElementById("menu-icon").style.display = "inline";
+        document.getElementById("closeUserArea").style.display = "inline";
+    }
+})
+
+if (mobile) {
+    document.getElementById("menu-icon").style.display = "inline";
+    document.getElementById("closeUserArea").style.display = "inline";
+}
+
+getLastUpdatedDate()

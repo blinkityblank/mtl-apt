@@ -185,11 +185,18 @@ function checkForDoubles(ads) {
 //removes ads that are 3 days old
 function removeThreeDaysOld() {
     let currentTime = new Date().getTime();
-    ref.orderByChild("datePosted").endAt(currentTime - 259200000).on("value", function (snap) {
+    ref.orderByChild("datePosted").endAt(currentTime - 259200000).once("value", function (snap) {
         snap.forEach(function (child) {
             ref.child(child.key).remove();
         })
     })
+}
+
+function lastUpdated() {
+    let currentDate = new Date().getTime();
+    db.ref('lastUpdated/').set({
+        "latest": currentDate
+    });
 }
 
 //*************************************************************************************** */
@@ -209,14 +216,10 @@ function main(pageNum, endDate) {
                     writeToDB(adsArray, pageNum, endDate);
                 }, e => console.log(e))
         })
+    removeThreeDaysOld();
+    lastUpdated();
 }
 
 
-
-main(1, 0);
-
-
-//Calls the main function every 10 minutes
-// setInterval(() => main(1, 0), 600000);
-
-removeThreeDaysOld();
+// Calls the main function every 10 minutes
+setInterval(() => main(1, 0), 600000);

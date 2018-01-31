@@ -1,11 +1,189 @@
+/* 
+html5doctor.com Reset Stylesheet
+v1.6.1
+Last Updated: 2010-09-17
+Author: Richard Clark - http://richclarkdesign.com 
+Twitter: @rich_clark
+*/
+
+html,
+body,
+div,
+span,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+abbr,
+address,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+samp,
+small,
+strong,
+sub,
+sup,
+var,
+b,
+i,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+}
+
+body {
+    line-height: 1;
+}
+
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+    display: block;
+}
+
+nav ul {
+    list-style: none;
+}
+
+blockquote,
+q {
+    quotes: none;
+}
+
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+    content: '';
+    content: none;
+}
+
+a {
+    margin: 0;
+    padding: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+}
+
+/* change colours to suit your needs */
+
+ins {
+    background-color: #ff9;
+    color: #000;
+    text-decoration: none;
+}
+
+/* change colours to suit your needs */
+
+mark {
+    background-color: #ff9;
+    color: #000;
+    font-style: italic;
+    font-weight: bold;
+}
+
+del {
+    text-decoration: line-through;
+}
+
+abbr[title],
+dfn[title] {
+    border-bottom: 1px dotted;
+    cursor: help;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/* change border colour to suit your needs */
+
+hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid #cccccc;
+    margin: 1em 0;
+    padding: 0;
+}
+
+input,
+select {
+    vertical-align: middle;
+}
+
 @media (max-width: 799px) {
     #closeSidebar {
         stroke: #888888;
         background-color: rgba(255, 255, 255, 0.9);
         position: fixed;
+        padding: 10px;
         top: 10px;
         left: 0vw;
-        margin-left: -45px;
+        margin-left: -55px;
         transition: 0.5s ease-in-out all;
     }
     #closeSidebar:hover {
@@ -28,17 +206,30 @@
     .content-side {
         padding: 20px;
     }
+    #closeUserArea {
+        float: left;
+        stroke: #666666;
+        margin-top: 10px;
+        margin-left: 10px;
+    }
+    #closeUserArea:hover {
+        cursor: pointer;
+        stroke: #999999;
+    }
     #userArea {
-        font-size: 0.9em;
+        text-align: right;
+        font-size: 1em;
         position: absolute;
-        max-width: 50vw;
+        max-width: 200vw;
+        min-width: 200px;
         top: 0;
-        right: 0;
-        z-index: 1000;
+        right: -210px;
+        z-index: 10000;
         background-color: white;
         border-radius: 20px;
         border: #dddddd 2px solid;
         line-height: 10px;
+        transition: 0.5s ease-in-out right;
     }
     #userArea ul {
         list-style: none;
@@ -61,7 +252,7 @@
         max-width: 400px;
         width: 400px;
         position: absolute;
-        z-index: 1000;
+        z-index: 100000;
         background-color: white;
         border-radius: 20px;
         border: #dddddd 2px solid;
@@ -75,7 +266,8 @@
         position: fixed;
         top: 10px;
         left: 0vw;
-        margin-left: -45px;
+        padding: 10px;
+        margin-left: -55px;
         transition: 0.5s ease-in-out all;
     }
     #closeSidebar:hover {
@@ -83,7 +275,7 @@
         cursor: pointer;
     }
     #sidebar-container {
-        z-index: 1;
+        z-index: 10000;
         height: 100vh;
         max-width: 25vw;
         min-width: 25vw;
@@ -112,7 +304,7 @@
         line-height: 10px;
     }
     #userArea ul {
-        padding: 0 20px 0 20px;
+        padding: 10px 20px 10px 20px;
     }
     #userArea li {
         display: inline;
@@ -140,8 +332,43 @@
 }
 
 body {
-    margin: 0;
     font-family: 'Open Sans', sans-serif;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+p,
+h1,
+h2,
+h3,
+h4 {
+    padding-bottom: 10px;
+}
+
+#sidebar h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+#overlay h2 {
+    font-size: 1.3em;
+    font-weight: 700;
+}
+
+#overlay h1 {
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+.content-side h3 {
+    font-size: 1.1em;
+    padding-bottom: 20px;
+    font-weight: 700;
+}
+
+#sidebar-container {
+    overflow-x: hidden;
 }
 
 #map {
@@ -185,7 +412,7 @@ a svg.crossedHeart:hover {
 }
 
 #colorLegend ul {
-    padding: 10px 30px 10px 30px;
+    padding: 0px 30px 10px 30px;
 }
 
 #colorLegend li {
@@ -193,6 +420,16 @@ a svg.crossedHeart:hover {
     padding: 5px;
     border-radius: 5px;
     color: white;
+}
+
+#colorLegend p {
+    padding: 0px 20px 0px 20px;
+    font-size: 0.9em;
+    line-height: 1.2em;
+}
+
+#colorLegend h3 {
+    padding: 20px 20px 10px 20px;
 }
 
 #closeColorLegend {
@@ -220,4 +457,32 @@ a svg.crossedHeart:hover {
     justify-content: center;
     flex-direction: column;
     align-items: center;
+}
+
+#menu-icon {
+    z-index: 1000;
+    width: 32px;
+    height: 32px;
+    border: #666666 solid 2px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.9);
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+#menu-icon:hover {
+    cursor: pointer;
+}
+
+#lastUpdateContainer {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1;
+    font-size: 0.8em;
+    background-color: white;
+    border-radius: 20px;
+    border: #dddddd 2px solid;
+    padding: 5px 15px 5px 15px;
 }
