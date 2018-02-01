@@ -249,7 +249,7 @@ function addMarkers(data, map) {
         const templateString =
             ` <div class="content-side" idAd="${ad.id}">
                 <a class="saveListing" style="display:none;" href="javascript:saveAd(${ad.id})">${heart}</a>
-                <h3>${ad.title}</h3>
+                <h3><a href="${ad.link}" target="_blank">${ad.title}</a></h3>
                 <h4>${ad.mapAddress}</h3>
                 <p>Date posted:  ${new Date().getDate() !== date.getDate() ? date.toDateString() : "Today,"} ${date.toLocaleTimeString()}</p>
                 <h3>${ad.price > 0 ? ad.price/100 : "Sur Demande"}$ </h3>
@@ -359,8 +359,8 @@ function viewSaved() {
                     const date = new Date(ad.datePosted)
 
                     return `<div class="content-side" idAd="${ad.id}">
-                            <h3>${ad.title}</h3>
-                            <a href="javascript:removeSaved(${ad.id})">${crossedHeart}</a>
+                    <h3><a href="${ad.link}" target="_blank">${ad.title}</a></h3>
+                    <a href="javascript:removeSaved(${ad.id})">${crossedHeart}</a>
                             <h4>${ad.mapAddress}</h3>
                             <p>Date posted:  ${new Date().getDate() !== date.getDate() ? date.toDateString() : "Today,"} ${date.toLocaleTimeString()}</p>
                             <h3>${ad.price > 0 ? ad.price/100 : "Sur Demande"}$ </h3>

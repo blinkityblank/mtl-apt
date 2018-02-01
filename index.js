@@ -99,6 +99,12 @@ function getDataFromAd(prev, body) {
     try {
         data = JSON.parse(script.substring(script.indexOf("{"), script.lastIndexOf("}") + 1));
         data = data.config.VIP;
+        if (data.adLocation.longitude > -73.5202339 ||
+            data.adLocation.longitude < -73.6772573 ||
+            data.adLocation.latitude < 45.3964454 ||
+            data.adLocation.latitude > 45.5735141) {
+            return prev;
+        }
         ad = {
             "description": data.description,
             "datePosted": data.sortingDate,
@@ -223,3 +229,6 @@ function main(pageNum, endDate) {
 
 // Calls the main function every 10 minutes
 setInterval(() => main(1, 0), 600000);
+
+//For testing purposes only;
+// main(1, 0);

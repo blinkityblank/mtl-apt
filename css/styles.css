@@ -486,3 +486,17 @@ a svg.crossedHeart:hover {
     border: #dddddd 2px solid;
     padding: 5px 15px 5px 15px;
 }
+
+div.content-side h3 {
+    font-size: 1.2em;
+}
+
+h3 a {
+    color: black;
+    font-size: 1.1em;
+}
+
+h3 a:hover {
+    color: #666666;
+    font-size: 1.1em;
+}
