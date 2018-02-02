@@ -106,7 +106,7 @@ function getDataFromAd(prev, body) {
             return prev;
         }
         ad = {
-            "description": data.description,
+            //"description": data.description,
             "datePosted": data.sortingDate,
             "mapAddress": data.adLocation.mapAddress,
             "latitude": data.adLocation.latitude,
@@ -232,3 +232,7 @@ setInterval(() => main(1, 0), 600000);
 
 //For testing purposes only;
 // main(1, 0);
+
+// for (let i = 1; i < 30; i++) {
+//     main(i, 0)
+// }

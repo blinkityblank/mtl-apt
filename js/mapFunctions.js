@@ -238,12 +238,12 @@ function getData(map) {
 function addMarkers(data, map) {
     data.reduce((prev, ad, i) => {
         // if the ad is outside the predefined area, don't add it.
-        if (ad.longitude > -73.5202339 ||
-            ad.longitude < -73.6772573 ||
-            ad.latitude < 45.3964454 ||
-            ad.latitude > 45.5735141) {
-            return false;
-        }
+        // if (ad.longitude > -73.5202339 ||
+        //     ad.longitude < -73.6772573 ||
+        //     ad.latitude < 45.3964454 ||
+        //     ad.latitude > 45.5735141) {
+        //     return false;
+        // }
         const date = new Date(ad.datePosted)
         let image;
         const templateString =
